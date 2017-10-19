@@ -1,27 +1,31 @@
 var dash_button = require('node-dash-button');
-var request = require('request');
-var debug = 0;
-var macAdress=process.env.DASH_MAC;
-var auth=process.env.AUTH;
-var url=process.env.URL;
-var method=process.env.METHOD;
-console.log("Started dash button listener app", macAdress, auth, url, method);
-// ac:63:be:a4:5e:6b
+
+var macAdress = '18:74:2e:26:95:d9';
+var mqttServer = "192.168.1.14";
+var topic = "";
+var payload = 2;
+var options = {
+	keepalive: 10,
+	clientId: 'docker-dash',
+	protocolId: 'MQTT',
+	protocolVersion: 4,
+	clean: true,
+	reconnectPeriod: 1000,
+	connectTimeout: 30 * 1000,
+	will: {
+		topic: 'WillMsg',
+		payload: 'Connection Closed abnormally..!',
+		qos: 0,
+		retain: false
+	},
+	rejectUnauthorized: false
+};
+
 var dash = dash_button(macAdress, null, null, "all");
 dash.on("detected", function (btn){
   console.log("Button found with mac address :", btn);
-  request({
-    url: url,
-    method: method,
-    headers : {
-      "Authorization" : "Basic " + auth
-    }
-  },
-  function (error, response, body) {
-    if (!error && response.statusCode == 200) {
-      if (debug == 1) {console.log((new Date()) + "Got response Value: " + response.statusCode);}
-    }else{
-      console.log((new Date()) + " - Error : "  + error + " - Status Code:" + response.statusCode);
-    }
+  var client = mqtt.connect(mqttServer, options);
+  client.on('connect', () => {
+      client.publish(topic, payload.toString(), {}, () => client.end());
   });
 });
